@@ -16,6 +16,7 @@
 - ⚡ Cloudflare 全球边缘加速
 
 ---
+[在线预览](https://dh.openapi.kdns.fr)
 
 # ✨ 核心功能
 
