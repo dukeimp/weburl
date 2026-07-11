@@ -163,19 +163,6 @@ JWT_SECRET
     ├── styles.css
     └── favicon.svg
 ```
-
----
-
-# 📝 更新日志
-
-## V2 优化方向
-
-- 现代化 UI
-- 智能站内搜索
-- 更好的移动端体验
-- 更丰富交互动画
-- 更完善管理体验
-
 ---
 
 # 📄 License
@@ -186,7 +173,7 @@ MIT License
 
 # 👨‍💻 作者
 
-dukeimp
+dukeimp https://github.com/dukeimp/weburl
 
 ---
 
