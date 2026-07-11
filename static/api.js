@@ -1,5 +1,5 @@
 // 从全局变量中获取 API 地址，并添加 /api 路径
-const API_BASE_URL = 'https://webapi.openapi.kdns.fr/api';
+const API_BASE_URL = 'https://you.openapi.kdns.fr/api';
 let token = null;
 
 // Token 管理
