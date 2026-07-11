@@ -78,32 +78,11 @@
 - Cloudflare D1 Database
 
   优势：
-
 - 无服务器
-
 - 全球节点访问
-
 - 自动扩展
-
 - 低维护成本
 
-## 前端
-
-- HTML5
-
-- CSS3
-
-- JavaScript
-
-  特点：
-
-- 无框架依赖
-
-- 加载速度快
-
-- 易于二次开发
-
----
 [项目地址](https://github.com/dukeimp/weburl)
 ---
 # 🚀 部署方式
@@ -151,6 +130,22 @@ DB
 ADMIN_PASSWORD
 JWT_SECRET
 ```
+---
+## 前端
+
+- HTML5
+
+- CSS3
+
+- JavaScript
+
+  特点：
+
+- 无框架依赖
+
+- 加载速度快
+
+- 易于二次开发
 
 ---
 
