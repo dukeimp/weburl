@@ -120,7 +120,7 @@ worker.js
 执行：
 
 ```
-schema.sql
+DB.sql
 ```
 
 完成初始化。
@@ -155,7 +155,7 @@ JWT_SECRET
 
 ```
 .
-├── schema.sql
+├── DB.sql
 ├── worker.js
 └── static/
     ├── index.html
