@@ -19,7 +19,9 @@
 
 # ✨ 核心功能
 
+
 ## 🔍 智能站内搜索
+<img width="1418" height="334" alt="image" src="https://github.com/user-attachments/assets/3a9c2ecd-f64b-43b5-ad52-3f4670a3b98f" />
 
 支持实时模糊搜索：
 
@@ -52,6 +54,7 @@
 - 设置私密分组
 
 ---
+<img width="1511" height="1013" alt="image" src="https://github.com/user-attachments/assets/98863aa0-74cc-4648-ad0c-f03ed7aa9285" />
 
 ## 🔗 网站管理
 
