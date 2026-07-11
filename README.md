@@ -187,7 +187,7 @@ JWT_SECRET
 # 🚀 前端部署方式
 
 ## 创建 Worker
-修改static/api.js  的后端接口地址  https://you-doman.worker.dv/api 
+修改static/api.js  的后端接口地址  const API_BASE_URL = 'https://your-worker.workers.dev/api'; 
 <img width="645" height="256" alt="image" src="https://github.com/user-attachments/assets/0baa9402-d831-4b4c-a521-089ecbcf47ed" />
 
 在 Cloudflare Dashboard 创建 Worker，并部署：
