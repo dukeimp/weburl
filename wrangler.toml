@@ -1,0 +1,24 @@
+name = "weburl"
+main = "worker.js"
+compatibility_date = "2026-07-09"
+workers_dev = true
+preview_urls = false
+keep_vars = true
+
+[[routes]]
+pattern = "nav.example.com"
+custom_domain = true
+
+[assets]
+directory = "./static"
+binding = "ASSETS"
+run_worker_first = true
+not_found_handling = "single-page-application"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "weburl-db"
+database_id = "00000000-0000-0000-0000-000000000000"
+
+[secrets]
+required = ["ADMIN_PASSWORD", "JWT_SECRET"]
