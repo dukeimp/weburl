@@ -44,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 设置保存的搜索引擎
     const searchEngine = document.getElementById('searchEngine');
     searchEngine.value = getSearchEngine();
+    searchEngine.addEventListener('change', () => saveSearchEngine(searchEngine.value));
 
     // 站内实时模糊搜索
     if (searchInput) {
@@ -51,6 +52,19 @@ document.addEventListener('DOMContentLoaded', () => {
             filterNavigation(searchInput.value.trim());
         });
     }
+
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape') closeNavDrawer();
+    });
+    document.addEventListener('click', event => {
+        if (!event.target.closest('.search-panel')) {
+            window.setTimeout(clearMainSearch, 0);
+        }
+    });
+    window.addEventListener('scroll', () => {
+        updateActiveNavItem();
+        document.getElementById('backToTopButton')?.classList.toggle('is-visible', window.scrollY > 500);
+    }, { passive: true });
     
     // 检查并恢复登录状态
     checkLoginStatus();
@@ -110,11 +124,41 @@ function updateBackgroundOpacityDisplay(value) {
     }
 }
 
+function getPanelTransparencyValue(value) {
+    const transparency = parseInt(value, 10);
+    if (Number.isNaN(transparency)) return 0;
+    return Math.min(92, Math.max(0, transparency));
+}
+
+function updatePanelTransparencyDisplay(value) {
+    const transparency = getPanelTransparencyValue(value);
+    const display = document.getElementById('panelTransparencyValue');
+    if (display) display.textContent = `${transparency}%`;
+}
+
+function applyPanelTransparency(value) {
+    const transparency = getPanelTransparencyValue(value);
+    document.body.classList.toggle('transparent-panels', transparency > 0);
+    const remaining = 1 - transparency / 100;
+    const panelAlpha = Math.max(0.025, remaining * remaining * 0.7);
+    document.body.style.setProperty('--panel-user-alpha', panelAlpha.toFixed(3));
+    document.body.style.setProperty('--panel-nav-alpha', Math.min(0.22, panelAlpha + 0.045).toFixed(3));
+}
+
+function updateBackgroundSourceStatus(message, type = 'info') {
+    const status = document.getElementById('backgroundSourceStatus');
+    if (!status) return;
+    status.className = `background-source-status ${type}`;
+    const icon = type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-info';
+    status.innerHTML = `<i class="fas ${icon}"></i><span>${escapeHtml(message)}</span>`;
+}
+
 function initializeBackgroundControls() {
     const opacityInput = document.getElementById('backgroundOpacity');
     const urlInput = document.getElementById('backgroundUrl');
     const modeInput = document.getElementById('backgroundMode');
     const fileInput = document.getElementById('backgroundFile');
+    const panelInput = document.getElementById('panelTransparency');
     if (!opacityInput) return;
 
     opacityInput.addEventListener('input', () => {
@@ -122,9 +166,20 @@ function initializeBackgroundControls() {
         previewBackgroundSettings();
     });
 
-    urlInput?.addEventListener('input', previewBackgroundSettings);
+    urlInput?.addEventListener('input', () => {
+        selectedBackgroundDataUrl = '';
+        const value = urlInput.value.trim();
+        if (!value) updateBackgroundSourceStatus('当前使用已保存的背景');
+        else if (!safeHttpUrl(value, '')) updateBackgroundSourceStatus('请输入有效的 HTTP/HTTPS 图片地址', 'error');
+        else updateBackgroundSourceStatus('图片 URL 已解析，保存后将同步到数据库', 'success');
+        previewBackgroundSettings();
+    });
     modeInput?.addEventListener('change', previewBackgroundSettings);
     fileInput?.addEventListener('change', handleBackgroundFileChange);
+    panelInput?.addEventListener('input', () => {
+        updatePanelTransparencyDisplay(panelInput.value);
+        applyPanelTransparency(panelInput.value);
+    });
 }
 
 async function loadBackgroundSettings() {
@@ -152,6 +207,7 @@ function clearBackgroundStyles() {
 
 function applyBackgroundSettings(settings) {
     const imageData = getBackgroundImageValue(settings);
+    applyPanelTransparency(settings?.panel_transparency ?? 50);
     document.body.classList.toggle('has-custom-background', !!imageData);
 
     if (!imageData) {
@@ -171,7 +227,14 @@ function previewBackgroundSettings() {
     const url = document.getElementById('backgroundUrl')?.value.trim();
     const mode = document.getElementById('backgroundMode')?.value || 'cover';
     const opacity = getBackgroundOpacityValue(document.getElementById('backgroundOpacity')?.value ?? 50);
-    const previewImage = selectedBackgroundDataUrl || url;
+    const currentImage = currentBackgroundSettings?.image_data || '';
+    const currentSource = currentBackgroundSettings?.image_source || '';
+    const safeUrl = safeHttpUrl(url, '');
+    const previewImage = selectedBackgroundDataUrl ||
+        (safeUrl && safeUrl === safeHttpUrl(currentSource, '') && currentImage ? currentImage : safeUrl) ||
+        currentImage;
+    const panelTransparency = document.getElementById('panelTransparency')?.value ?? 50;
+    applyPanelTransparency(panelTransparency);
 
     if (!previewImage) {
         clearBackgroundStyles();
@@ -198,18 +261,21 @@ async function handleBackgroundFileChange(event) {
     const file = event.target.files?.[0];
     if (!file) {
         selectedBackgroundDataUrl = '';
+        updateBackgroundSourceStatus('当前使用已保存的背景');
         previewBackgroundSettings();
         return;
     }
 
     if (!file.type.startsWith('image/')) {
         showToast('请选择图片文件', 'error');
+        updateBackgroundSourceStatus('文件格式不受支持', 'error');
         event.target.value = '';
         return;
     }
 
     if (file.size > 4 * 1024 * 1024) {
         showToast('背景图片不能超过 4MB', 'error');
+        updateBackgroundSourceStatus('图片超过 4MB，请重新选择', 'error');
         event.target.value = '';
         return;
     }
@@ -217,9 +283,11 @@ async function handleBackgroundFileChange(event) {
     try {
         selectedBackgroundDataUrl = await readFileAsDataUrl(file);
         document.getElementById('backgroundUrl').value = '';
+        updateBackgroundSourceStatus(`已选择 ${file.name}，保存后上传到数据库`, 'success');
         previewBackgroundSettings();
     } catch (error) {
         showToast(error.message, 'error');
+        updateBackgroundSourceStatus('读取图片失败', 'error');
     }
 }
 
@@ -249,7 +317,7 @@ function updateAdminButton() {
     } else {
         adminButton.innerHTML = `
             <button class="admin-button" onclick="openAdminModal()">
-                <i class="fas fa-user-lock"></i> 管理员登录
+                <i class="fas fa-user-lock"></i> 登录
             </button>
         `;
     }
@@ -292,6 +360,14 @@ function handleSearch(event) {
 
     // 保存用户选择
     saveSearchEngine(searchEngine.value);
+    clearMainSearch();
+}
+
+function clearMainSearch() {
+    const input = document.getElementById('searchInput');
+    if (!input || !input.value) return;
+    input.value = '';
+    filterNavigation('');
 }
 
 // 管理员登录相关
@@ -442,6 +518,8 @@ function openGroupModal(groupId = null) {
     const form = document.getElementById('groupForm');
     form.reset();
     form.dataset.groupId = groupId || '';
+    document.getElementById('groupModalTitle').textContent = groupId ? '编辑分组' : '添加分组';
+    document.getElementById('groupModalSubtitle').textContent = groupId ? '修改分组名称和可见范围' : '创建一个新的网址分类';
     
     if (groupId) {
         loadGroupData(groupId);
@@ -462,12 +540,16 @@ function openBackgroundModal() {
 
     const settings = currentBackgroundSettings;
     const opacity = getBackgroundOpacityValue(settings?.opacity ?? 50);
+    const panelTransparency = getPanelTransparencyValue(settings?.panel_transparency ?? 50);
     selectedBackgroundDataUrl = '';
     document.getElementById('backgroundUrl').value = settings?.image_source || '';
     document.getElementById('backgroundFile').value = '';
     document.getElementById('backgroundMode').value = settings?.mode || 'cover';
     document.getElementById('backgroundOpacity').value = opacity;
     updateBackgroundOpacityDisplay(opacity);
+    document.getElementById('panelTransparency').value = panelTransparency;
+    updatePanelTransparencyDisplay(panelTransparency);
+    updateBackgroundSourceStatus(settings?.image_data ? '当前使用已保存的背景，可直接调整效果' : '请选择图片或粘贴图片 URL');
     document.getElementById('backgroundModal').style.display = 'block';
 }
 
@@ -482,6 +564,7 @@ async function handleBackgroundSubmit(event) {
     const url = document.getElementById('backgroundUrl').value.trim();
     const mode = document.getElementById('backgroundMode').value;
     const opacity = getBackgroundOpacityValue(document.getElementById('backgroundOpacity').value);
+    const panelTransparency = getPanelTransparencyValue(document.getElementById('panelTransparency').value);
 
     if (!url && !selectedBackgroundDataUrl && !currentBackgroundSettings?.image_data) {
         await resetBackground();
@@ -495,7 +578,8 @@ async function handleBackgroundSubmit(event) {
             image_url: selectedBackgroundDataUrl ? '' : url,
             image_data: selectedBackgroundDataUrl || (sourceChanged ? '' : currentBackgroundSettings?.image_data || ''),
             mode,
-            opacity
+            opacity,
+            panel_transparency: panelTransparency
         });
         selectedBackgroundDataUrl = '';
         applyBackgroundSettings(currentBackgroundSettings);
@@ -670,9 +754,7 @@ async function loadNavigation() {
                 const groupId = `group-${group.id}`;
                 
                 html += `
-                    <div id="${groupId}" class="group ${isEditMode ? 'is-draggable' : ''}"
-                         data-group-id="${group.id}"
-                         ${isEditMode ? 'draggable="true"' : ''}>
+                    <div id="${groupId}" class="group" data-group-id="${group.id}">
                         <div class="group-title">
                             ${getGroupTitle(group)}
                             ${getGroupActions(group.id)}
@@ -685,12 +767,15 @@ async function loadNavigation() {
                 
                 navHtml += `
                     <a href="#${groupId}" 
-                       class="nav-item" 
-                       onclick="highlightNavItem(this)"
-                       data-group-id="${groupId}">
+                       class="nav-item ${isEditMode ? 'is-draggable' : ''}"
+                       onclick="handleGroupNavClick(this)"
+                       data-group-id="${groupId}"
+                       data-group-numeric-id="${group.id}"
+                       ${isEditMode ? 'draggable="true" title="拖动调整分组顺序"' : ''}>
+                        ${isEditMode ? '<i class="fas fa-grip-vertical nav-drag-handle"></i>' : ''}
                         ${escapeHtml(group.name)}
                         ${group.is_private ? 
-                            `<i class="fas fa-lock group-privacy-icon" title="私密分组"></i>` : ''
+                            `<i class="fas fa-lock group-privacy-icon" title="隐藏分组"></i>` : ''
                         }
                     </a>
                 `;
@@ -705,8 +790,7 @@ async function loadNavigation() {
         await loadIcons();
         initializeDragSorting();
         
-        // 监听滚动事件来更新活动项
-        window.addEventListener('scroll', updateActiveNavItem);
+        updateActiveNavItem();
     } catch (error) {
         // 显示错误信息
         navigationElement.innerHTML = `<div class="error">加载失败: ${escapeHtml(error.message)}</div>`;
@@ -716,10 +800,41 @@ async function loadNavigation() {
 
 // 高亮当前选中的导航项
 function highlightNavItem(element) {
+    if (!element) return;
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.remove('active');
     });
     element.classList.add('active');
+    const navList = document.getElementById('groupNav');
+    if (navList) {
+        const itemTop = element.offsetTop;
+        const itemBottom = itemTop + element.offsetHeight;
+        if (itemTop < navList.scrollTop) navList.scrollTo({ top: itemTop - 8, behavior: 'smooth' });
+        if (itemBottom > navList.scrollTop + navList.clientHeight) {
+            navList.scrollTo({ top: itemBottom - navList.clientHeight + 8, behavior: 'smooth' });
+        }
+    }
+}
+
+function handleGroupNavClick(element) {
+    if (element.classList.contains('was-dragging')) {
+        element.classList.remove('was-dragging');
+        return false;
+    }
+    highlightNavItem(element);
+    closeNavDrawer();
+}
+
+function openNavDrawer() {
+    document.getElementById('navSidebar')?.classList.add('is-open');
+    document.getElementById('navOverlay')?.classList.add('is-open');
+    document.body.classList.add('nav-drawer-open');
+}
+
+function closeNavDrawer() {
+    document.getElementById('navSidebar')?.classList.remove('is-open');
+    document.getElementById('navOverlay')?.classList.remove('is-open');
+    document.body.classList.remove('nav-drawer-open');
 }
 
 // 根据滚动位置更新活动导航项
@@ -757,10 +872,6 @@ function createLinkCard(link) {
                 <div class="link-actions">
                     <button onclick="openLinkModal(${link.id})"><i class="fas fa-edit"></i> 编辑</button>
                     <button onclick="deleteLinkConfirm(${link.id})"><i class="fas fa-trash"></i> 删除</button>
-                    <div class="order-actions">
-                        <button onclick="moveLinkUp(${link.id}, ${link.group_id})"><i class="fas fa-arrow-up"></i></button>
-                        <button onclick="moveLinkDown(${link.id}, ${link.group_id})"><i class="fas fa-arrow-down"></i></button>
-                    </div>
                 </div>
             ` : ''}
         </div>
@@ -917,75 +1028,6 @@ async function deleteLinkConfirm(linkId) {
     }
 }
 
-// 链接排序功能
-async function moveLinkUp(linkId, groupId) {
-    let toast;
-    const links = (await fetchLinks())
-        .filter(l => l.group_id === groupId)
-        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-    const currentIndex = links.findIndex(l => l.id === linkId);
-    if (currentIndex === 0) {
-        if (toast) toast.remove();
-        showToast('已经是第一个链接了', 'error');
-        return;
-    }
-    
-    toast = showToast('正在更新顺序...', 'loading');
-    const currentLink = links[currentIndex];
-    const prevLink = links[currentIndex - 1];
-    try {
-        await updateLink(currentLink.id, getLinkUpdatePayload(currentLink, {
-            order_num: prevLink.order_num
-        }));
-        await updateLink(prevLink.id, getLinkUpdatePayload(prevLink, {
-            order_num: currentLink.order_num
-        }));
-        
-        toast.remove();
-        showToast('链接顺序已更新');
-        await loadNavigation();
-    } catch (error) {
-        toast.remove();
-        showToast('更新顺序失败: ' + error.message, 'error');
-    } finally {
-        if (toast) toast.remove();
-    }
-}
-
-async function moveLinkDown(linkId, groupId) {
-    let toast;
-    const links = (await fetchLinks())
-        .filter(l => l.group_id === groupId)
-        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-    const currentIndex = links.findIndex(l => l.id === linkId);
-    if (currentIndex === links.length - 1) {
-        if (toast) toast.remove();
-        showToast('已经是最后一个链接了', 'error');
-        return;
-    }
-    
-    toast = showToast('正在更新顺序...', 'loading');
-    const currentLink = links[currentIndex];
-    const nextLink = links[currentIndex + 1];
-    try {
-        await updateLink(currentLink.id, getLinkUpdatePayload(currentLink, {
-            order_num: nextLink.order_num
-        }));
-        await updateLink(nextLink.id, getLinkUpdatePayload(nextLink, {
-            order_num: currentLink.order_num
-        }));
-        
-        toast.remove();
-        showToast('链接顺序已更新');
-        await loadNavigation();
-    } catch (error) {
-        toast.remove();
-        showToast('更新顺序失败: ' + error.message, 'error');
-    } finally {
-        if (toast) toast.remove();
-    }
-}
-
 // 自动获取网页信息
 async function autoFillLinkInfo() {
     const urlInput = document.getElementById('linkUrl');
@@ -1024,71 +1066,6 @@ async function autoFillLinkInfo() {
     }
 }
 
-// 分组排序功能
-async function moveGroupUp(groupId) {
-    let toast;
-    const groups = (await fetchGroups()).sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-    const currentIndex = groups.findIndex(g => g.id === groupId);
-    if (currentIndex === 0) {
-        if (toast) toast.remove();
-        showToast('已经是第一个分组了', 'error');
-        return;
-    }
-    
-    toast = showToast('正在更新顺序...', 'loading');
-    const currentGroup = groups[currentIndex];
-    const prevGroup = groups[currentIndex - 1];
-    try {
-        await updateGroup(currentGroup.id, getGroupUpdatePayload(currentGroup, {
-            order_num: prevGroup.order_num
-        }));
-        await updateGroup(prevGroup.id, getGroupUpdatePayload(prevGroup, {
-            order_num: currentGroup.order_num
-        }));
-        
-        toast.remove();
-        showToast('分组顺序已更新');
-        await loadNavigation();
-    } catch (error) {
-        toast.remove();
-        showToast('更新顺序失败: ' + error.message, 'error');
-    } finally {
-        if (toast) toast.remove();
-    }
-}
-
-async function moveGroupDown(groupId) {
-    let toast;
-    const groups = (await fetchGroups()).sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-    const currentIndex = groups.findIndex(g => g.id === groupId);
-    if (currentIndex === groups.length - 1) {
-        if (toast) toast.remove();
-        showToast('已经是最后一个分组了', 'error');
-        return;
-    }
-    
-    toast = showToast('正在更新顺序...', 'loading');
-    const currentGroup = groups[currentIndex];
-    const nextGroup = groups[currentIndex + 1];
-    try {
-        await updateGroup(currentGroup.id, getGroupUpdatePayload(currentGroup, {
-            order_num: nextGroup.order_num
-        }));
-        await updateGroup(nextGroup.id, getGroupUpdatePayload(nextGroup, {
-            order_num: currentGroup.order_num
-        }));
-        
-        toast.remove();
-        showToast('分组顺序已更新');
-        await loadNavigation();
-    } catch (error) {
-        toast.remove();
-        showToast('更新顺序失败: ' + error.message, 'error');
-    } finally {
-        if (toast) toast.remove();
-    }
-}
-
 function getLinkUpdatePayload(link, overrides = {}) {
     return {
         name: link.name,
@@ -1114,23 +1091,63 @@ function initializeDragSorting() {
     if (!isEditMode) return;
 
     document.querySelectorAll('.link-card').forEach(card => {
-        card.addEventListener('dragstart', handleLinkDragStart);
-        card.addEventListener('dragend', handleDragEnd);
+        card.addEventListener('dragstart', handleStableLinkDragStart);
+        card.addEventListener('dragend', handleStableLinkDragEnd);
         card.addEventListener('click', preventClickWhileDragging);
     });
 
     document.querySelectorAll('.links').forEach(container => {
-        container.addEventListener('dragover', handleLinkDragOver);
-        container.addEventListener('drop', handleLinkDrop);
+        container.addEventListener('dragover', handleStableLinkDragOver);
+        container.addEventListener('drop', handleStableLinkDrop);
         container.addEventListener('dragleave', handleDragLeave);
     });
 
-    document.querySelectorAll('.group').forEach(group => {
-        group.addEventListener('dragstart', handleGroupDragStart);
-        group.addEventListener('dragover', handleGroupDragOver);
-        group.addEventListener('drop', handleGroupDrop);
-        group.addEventListener('dragend', handleDragEnd);
+    document.querySelectorAll('#groupNav .nav-item').forEach(item => {
+        item.addEventListener('dragstart', handleNavGroupDragStart);
+        item.addEventListener('dragend', handleNavGroupDragEnd);
     });
+
+    const groupNav = document.getElementById('groupNav');
+    groupNav?.addEventListener('dragover', handleNavGroupDragOver);
+    groupNav?.addEventListener('drop', handleNavGroupDrop);
+}
+
+function handleNavGroupDragStart(event) {
+    const groupId = Number.parseInt(event.currentTarget.dataset.groupNumericId, 10);
+    if (!groupId) return;
+    draggedItem = { type: 'nav-group', id: groupId };
+    event.currentTarget.classList.add('dragging', 'was-dragging');
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', `nav-group:${groupId}`);
+}
+
+function handleNavGroupDragEnd(event) {
+    event.currentTarget.classList.remove('dragging');
+    document.getElementById('groupNav')?.classList.remove('drag-over');
+    draggedItem = null;
+}
+
+function handleNavGroupDragOver(event) {
+    if (!draggedItem || draggedItem.type !== 'nav-group') return;
+    event.preventDefault();
+    event.currentTarget.classList.add('drag-over');
+    event.dataTransfer.dropEffect = 'move';
+
+    const afterElement = getDragAfterElement(event.currentTarget, event.clientY, '.nav-item');
+    const draggingItem = event.currentTarget.querySelector('.nav-item.dragging');
+    if (!draggingItem) return;
+    if (afterElement) event.currentTarget.insertBefore(draggingItem, afterElement);
+    else event.currentTarget.appendChild(draggingItem);
+}
+
+async function handleNavGroupDrop(event) {
+    if (!draggedItem || draggedItem.type !== 'nav-group') return;
+    event.preventDefault();
+    event.currentTarget.classList.remove('drag-over');
+    const orderedGroupIds = [...event.currentTarget.querySelectorAll('.nav-item')]
+        .map(item => Number.parseInt(item.dataset.groupNumericId, 10))
+        .filter(Boolean);
+    await persistGroupOrder(orderedGroupIds, '目录顺序已保存');
 }
 
 function preventClickWhileDragging(event) {
@@ -1140,26 +1157,16 @@ function preventClickWhileDragging(event) {
     }
 }
 
-function handleLinkDragStart(event) {
-    event.stopPropagation();
-    const linkId = parseInt(event.currentTarget.dataset.linkId);
+function handleStableLinkDragStart(event) {
+    const linkId = Number.parseInt(event.currentTarget.dataset.linkId, 10);
+    if (!linkId) return;
     draggedItem = { type: 'link', id: linkId };
-    event.currentTarget.classList.add('dragging');
-    event.currentTarget.classList.add('was-dragging');
+    event.currentTarget.classList.add('dragging', 'was-dragging');
     event.dataTransfer.effectAllowed = 'move';
     event.dataTransfer.setData('text/plain', `link:${linkId}`);
 }
 
-function handleGroupDragStart(event) {
-    if (event.target.closest('.link-card') || event.target.closest('button')) return;
-    const groupId = parseInt(event.currentTarget.dataset.groupId);
-    draggedItem = { type: 'group', id: groupId };
-    event.currentTarget.classList.add('dragging');
-    event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('text/plain', `group:${groupId}`);
-}
-
-function handleDragEnd(event) {
+function handleStableLinkDragEnd(event) {
     event.currentTarget.classList.remove('dragging');
     document.querySelectorAll('.drag-over').forEach(element => element.classList.remove('drag-over'));
     draggedItem = null;
@@ -1184,13 +1191,23 @@ function getDragAfterElement(container, y, selector) {
     }, { offset: Number.NEGATIVE_INFINITY, element: null }).element;
 }
 
-function handleLinkDragOver(event) {
+function getGridDragAfterElement(container, x, y) {
+    const cards = [...container.querySelectorAll('.link-card:not(.dragging)')];
+    return cards.find(card => {
+        const box = card.getBoundingClientRect();
+        const centerX = box.left + box.width / 2;
+        const pointerInRow = y >= box.top && y <= box.bottom;
+        return y < box.top || (pointerInRow && x < centerX);
+    }) || null;
+}
+
+function handleStableLinkDragOver(event) {
     if (!draggedItem || draggedItem.type !== 'link') return;
     event.preventDefault();
     event.currentTarget.classList.add('drag-over');
     event.dataTransfer.dropEffect = 'move';
 
-    const afterElement = getDragAfterElement(event.currentTarget, event.clientY, '.link-card');
+    const afterElement = getGridDragAfterElement(event.currentTarget, event.clientX, event.clientY);
     const draggingCard = document.querySelector('.link-card.dragging');
     if (!draggingCard) return;
 
@@ -1201,7 +1218,7 @@ function handleLinkDragOver(event) {
     }
 }
 
-async function handleLinkDrop(event) {
+async function handleStableLinkDrop(event) {
     if (!draggedItem || draggedItem.type !== 'link') return;
     event.preventDefault();
     event.stopPropagation();
@@ -1256,7 +1273,7 @@ async function handleLinkDrop(event) {
             await updateLink(update.link.id, update.payload);
         }
         toast.remove();
-        showToast('排序已保存');
+        showToast('链接位置已保存');
         await loadNavigation();
     } catch (error) {
         toast.remove();
@@ -1265,32 +1282,7 @@ async function handleLinkDrop(event) {
     }
 }
 
-function handleGroupDragOver(event) {
-    if (!draggedItem || draggedItem.type !== 'group') return;
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-
-    const navigation = document.getElementById('navigation');
-    const afterElement = getDragAfterElement(navigation, event.clientY, '.group');
-    const draggingGroup = document.querySelector('.group.dragging');
-    if (!draggingGroup) return;
-
-    if (afterElement == null) {
-        navigation.appendChild(draggingGroup);
-    } else {
-        navigation.insertBefore(draggingGroup, afterElement);
-    }
-}
-
-async function handleGroupDrop(event) {
-    if (!draggedItem || draggedItem.type !== 'group') return;
-    event.preventDefault();
-    event.stopPropagation();
-
-    const orderedGroupIds = [...document.querySelectorAll('#navigation > .group')]
-        .map(group => parseInt(group.dataset.groupId))
-        .filter(Boolean);
-
+async function persistGroupOrder(orderedGroupIds, successMessage) {
     const updates = orderedGroupIds
         .map((groupId, index) => {
             const group = currentGroups.find(item => item.id === groupId);
@@ -1300,7 +1292,10 @@ async function handleGroupDrop(event) {
         })
         .filter(Boolean);
 
-    if (updates.length === 0) return;
+    if (updates.length === 0) {
+        draggedItem = null;
+        return;
+    }
 
     const toast = showToast('正在保存分组排序...', 'loading');
     try {
@@ -1308,12 +1303,14 @@ async function handleGroupDrop(event) {
             await updateGroup(update.group.id, update.payload);
         }
         toast.remove();
-        showToast('分组排序已保存');
+        showToast(successMessage);
         await loadNavigation();
     } catch (error) {
         toast.remove();
         showToast('分组排序保存失败: ' + error.message, 'error');
         await loadNavigation();
+    } finally {
+        draggedItem = null;
     }
 }
 
@@ -1323,14 +1320,6 @@ function getGroupActions(groupId) {
     
     return `
         <div class="group-actions">
-            <div class="order-actions">
-                <button onclick="moveGroupUp(${groupId})" title="上移">
-                    <i class="fas fa-arrow-up"></i>
-                </button>
-                <button onclick="moveGroupDown(${groupId})" title="下移">
-                    <i class="fas fa-arrow-down"></i>
-                </button>
-            </div>
             <button onclick="openGroupModal(${groupId})" title="编辑">
                 <i class="fas fa-edit"></i>
             </button>
@@ -1347,7 +1336,7 @@ function getGroupTitle(group) {
         <div class="group-title-left">
             ${escapeHtml(group.name)}
             ${group.is_private ? 
-                `<i class="fas fa-lock group-privacy-icon" title="私密分组"></i>` : 
+                `<i class="fas fa-lock group-privacy-icon" title="隐藏分组"></i>` : 
                 (isEditMode ? `<i class="fas fa-lock-open group-privacy-icon" title="公开分组"></i>` : '')
             }
         </div>
@@ -1389,14 +1378,6 @@ function getLinkCard(link) {
             </div>
             ${isEditMode ? `
                 <div class="link-actions" onclick="event.preventDefault();">
-                    <div class="order-actions">
-                        <button onclick="moveLinkUp(${link.id}, ${link.group_id})" title="上移">
-                            <i class="fas fa-arrow-up"></i>
-                        </button>
-                        <button onclick="moveLinkDown(${link.id}, ${link.group_id})" title="下移">
-                            <i class="fas fa-arrow-down"></i>
-                        </button>
-                    </div>
                     <button onclick="openLinkModal(${link.id})" title="编辑">
                         <i class="fas fa-edit"></i>
                     </button>

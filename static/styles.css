@@ -229,17 +229,6 @@ body {
     align-items: center;
 }
 
-.group-actions .order-actions {
-    display: flex;
-    gap: 2px;
-}
-
-.group-actions .order-actions button {
-    padding: 4px 8px;
-    font-size: 12px;
-    width: 24px;
-}
-
 .links-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -387,16 +376,6 @@ body {
     background: #e2e8f0;
     color: #2d3748;
     transform: translateY(-1px);
-}
-
-.order-actions {
-    display: flex;
-    gap: 4px;
-}
-
-.order-actions button {
-    padding: 2px 6px;
-    font-size: 12px;
 }
 
 /* 模态框样式 */
@@ -732,16 +711,6 @@ body {
     transform: translateY(-1px);
 }
 
-.order-actions {
-    display: flex;
-    gap: 2px;
-}
-
-.order-actions button {
-    padding: 2px 6px;
-    font-size: 12px;
-}
-
 .admin-button i {
     font-size: 14px;
 }
@@ -845,11 +814,6 @@ body {
     background: #e2e8f0;
     color: #2d3748;
     transform: translateY(-1px);
-}
-
-.order-actions {
-    display: flex;
-    gap: 4px;
 }
 
 /* 链接卡片样式优化 */
@@ -989,16 +953,6 @@ body {
     transform: translateY(-1px);
 }
 
-.order-actions {
-    display: flex;
-    gap: 4px;
-}
-
-.order-actions button {
-    padding: 2px 6px;
-    font-size: 12px;
-}
-
 .admin-button i {
     font-size: 14px;
 }
@@ -1102,11 +1056,6 @@ body {
     background: #e2e8f0;
     color: #2d3748;
     transform: translateY(-1px);
-}
-
-.order-actions {
-    display: flex;
-    gap: 4px;
 }
 
 /* 链接网格布局 */
@@ -1607,6 +1556,50 @@ body.has-custom-background::after {
     }
 }
 
+body.transparent-panels .nav-sidebar,
+body.transparent-panels .header,
+body.transparent-panels .modal-content,
+body.transparent-panels .confirm-content,
+body.transparent-panels .admin-controls {
+    background: rgb(12 18 32 / var(--panel-nav-alpha, 0.12)) !important;
+}
+
+body.transparent-panels .group {
+    background: transparent !important;
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: none;
+}
+
+body.transparent-panels .group::before { display: none; }
+
+body.transparent-panels .link-card {
+    background: rgb(15 23 42 / var(--panel-user-alpha, 0.085)) !important;
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.1);
+}
+
+body.transparent-panels .search-bar,
+body.transparent-panels .floating-nav-button {
+    background: rgb(6 16 24 / var(--panel-nav-alpha, 0.12)) !important;
+}
+
+body.transparent-panels .nav-sidebar,
+body.transparent-panels .header,
+body.transparent-panels .group,
+body.transparent-panels .link-card {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+body.transparent-panels.has-custom-background::before { opacity: 0; }
+
+body.transparent-panels .group-title-left,
+body.transparent-panels .link-title,
+body.transparent-panels .link-description,
+body.transparent-panels .nav-item {
+    text-shadow: 0 2px 7px rgba(0, 0, 0, 0.9), 0 0 2px rgba(0, 0, 0, 0.9);
+}
+
 @media (max-width: 560px) {
     .container {
         padding: 12px;
@@ -1640,6 +1633,603 @@ body.has-custom-background::after {
         width: 100%;
         justify-content: flex-end;
     }
+}
+
+/* 强制隐藏分组控件保持单行，覆盖旧表单 label 样式 */
+#groupForm .group-visibility-option {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+}
+
+#groupForm .group-visibility-icon,
+#groupForm .group-checkbox {
+    flex: 0 0 auto;
+}
+
+#groupForm .group-visibility-copy {
+    flex: 1 1 auto;
+    width: auto !important;
+}
+
+/* 单行紧凑搜索栏 */
+.header {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    gap: 12px !important;
+}
+
+.search-form {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.search-panel {
+    width: 100%;
+    gap: 0;
+}
+
+.search-input-row select {
+    width: 76px;
+    height: 38px;
+    margin: 0;
+    padding: 0 22px 0 8px;
+    border: 0;
+    border-right: 1px solid var(--line);
+    outline: 0;
+    color: var(--text-main);
+    background-color: transparent;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.search-input-row select:focus { box-shadow: none !important; }
+.search-input-row select option { color: #111827; background: #f8fafc; }
+
+.header-actions {
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+}
+
+#groupForm .group-name-field input,
+#groupForm .group-name-field input:focus {
+    box-shadow: none !important;
+    outline: 0 !important;
+}
+
+@media (max-width: 720px) {
+    .header { padding: 10px !important; gap: 8px !important; }
+    .github-link { display: none !important; }
+    .search-input-row { gap: 7px; padding-left: 8px; }
+    .search-input-row select { width: 68px; padding-left: 5px; }
+    .search-leading-icon { display: none; }
+    .admin-button { padding: 10px !important; font-size: 13px !important; }
+}
+
+/* 背景设置面板 */
+#backgroundModal .modal-content {
+    width: min(720px, calc(100vw - 28px));
+    max-width: 720px;
+}
+
+#backgroundForm {
+    display: grid;
+    gap: 14px;
+}
+
+.background-setting-card {
+    display: grid;
+    gap: 14px;
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.045);
+}
+
+.background-setting-title {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+}
+
+.background-setting-title > i {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 auto;
+    border-radius: 11px;
+    color: var(--accent);
+    background: rgba(34, 211, 238, 0.12);
+}
+
+.background-setting-title > div {
+    display: grid;
+    gap: 3px;
+}
+
+.background-setting-title strong { color: var(--text-main); }
+.background-setting-title small { color: var(--text-muted); }
+
+.background-source-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 10px;
+    align-items: stretch;
+}
+
+#backgroundForm .background-upload-button {
+    width: auto;
+    min-width: 104px;
+    min-height: 38px;
+    margin: 0;
+    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid rgba(34, 211, 238, 0.35);
+    border-radius: 12px;
+    color: var(--text-main);
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.2), rgba(167, 139, 250, 0.16));
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.background-url-field {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 13px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    color: var(--text-muted);
+    background: rgba(3, 10, 18, 0.42);
+}
+
+.background-url-field:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.2);
+}
+
+#backgroundForm .background-url-field input {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 9px 0;
+    border: 0;
+    outline: 0;
+    color: var(--text-main);
+    background: transparent;
+    box-shadow: none !important;
+}
+
+.visually-hidden-file { display: none !important; }
+
+.background-source-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 20px;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.background-source-status.success { color: var(--accent-3); }
+.background-source-status.error { color: var(--danger); }
+
+.background-mode-field {
+    display: grid;
+    grid-template-columns: auto minmax(180px, 1fr);
+    align-items: center;
+    gap: 14px;
+    color: var(--text-muted);
+}
+
+#backgroundForm .background-mode-field select {
+    margin: 0;
+}
+
+.background-range-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.background-range-grid .range-field {
+    margin: 0;
+    padding: 13px;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 12px;
+    background: rgba(3, 10, 18, 0.26);
+}
+
+@media (max-width: 620px) {
+    .background-range-grid,
+    .background-mode-field {
+        grid-template-columns: 1fr;
+    }
+
+    #backgroundForm .background-upload-button { min-height: 40px; }
+}
+
+/* 添加/编辑分组弹窗 */
+#groupModal .group-modal-content {
+    width: min(520px, calc(100vw - 28px));
+    max-width: 520px;
+    padding: 24px;
+}
+
+.group-modal-heading {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    margin: 0 36px 20px 0;
+}
+
+.group-modal-heading-icon {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    flex: 0 0 auto;
+    border: 1px solid rgba(34, 211, 238, 0.28);
+    border-radius: 14px;
+    color: var(--accent);
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.18), rgba(167, 139, 250, 0.14));
+}
+
+.group-modal-heading h2 {
+    margin: 0;
+    padding: 0;
+    font-size: 21px;
+}
+
+.group-modal-heading h2::after { display: none; }
+
+.group-modal-heading p {
+    margin: 4px 0 0;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+#groupForm {
+    display: grid;
+    gap: 15px;
+}
+
+.group-name-field {
+    display: grid;
+    gap: 8px;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.group-name-field > div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 13px;
+    border: 1px solid var(--line);
+    border-radius: 13px;
+    color: var(--accent);
+    background: rgba(3, 10, 18, 0.42);
+}
+
+.group-name-field > div:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.12);
+}
+
+#groupForm .group-name-field input {
+    width: 100%;
+    margin: 0;
+    padding: 14px 0;
+    border: 0;
+    outline: 0;
+    color: var(--text-main);
+    background: transparent;
+}
+
+.group-visibility-option {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.045);
+    cursor: pointer;
+}
+
+.group-visibility-option > input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.group-visibility-icon {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.08);
+    transition: 0.2s ease;
+}
+
+.group-visibility-copy {
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    white-space: nowrap;
+}
+.group-visibility-copy strong { color: var(--text-main); font-size: 14px; }
+.group-visibility-copy small { color: var(--text-muted); font-size: 12px; line-height: 1.4; }
+
+.group-checkbox {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border: 2px solid rgba(226, 232, 240, 0.46);
+    border-radius: 7px;
+    color: transparent;
+    background: rgba(255, 255, 255, 0.06);
+    transition: 0.2s ease;
+}
+
+.group-checkbox i { font-size: 12px; }
+
+.group-visibility-option > input:checked ~ .group-visibility-icon {
+    color: var(--accent-2);
+    background: rgba(167, 139, 250, 0.16);
+}
+
+.group-visibility-option > input:checked ~ .group-checkbox {
+    border-color: transparent;
+    color: #071019;
+    background: linear-gradient(135deg, var(--accent-2), var(--accent));
+}
+
+.group-visibility-option > input:focus-visible ~ .group-checkbox { box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.2); }
+
+.group-modal-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 2px;
+}
+
+#groupForm .group-modal-actions button {
+    width: 100%;
+    min-height: 44px;
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* 新搜索区域 */
+.search-panel {
+    width: min(760px, 100%);
+    display: grid;
+    gap: 9px;
+}
+
+.search-input-row {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 7px 6px 15px;
+    border: 1px solid var(--line);
+    border-radius: 15px;
+    background: rgba(3, 10, 18, 0.38);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    transition: 0.2s ease;
+}
+
+.search-input-row:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.1), var(--shadow-md);
+}
+
+.search-leading-icon { color: var(--accent); }
+
+.search-input-row input {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 11px 0;
+    border: 0;
+    outline: 0;
+    color: var(--text-main);
+    background: transparent;
+    font-size: 15px;
+}
+
+.search-input-row input::placeholder { color: rgba(226, 232, 240, 0.5); }
+
+.search-input-row input::-webkit-search-cancel-button { filter: invert(1); opacity: 0.55; }
+
+.search-input-row .search-submit-button {
+    width: auto;
+    min-height: 40px;
+    margin: 0;
+    padding: 0 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 0;
+    border-radius: 11px;
+    color: #061018;
+    background: linear-gradient(135deg, var(--accent), var(--accent-3));
+    font-weight: 750;
+    cursor: pointer;
+}
+
+.visually-hidden-select { display: none !important; }
+
+body.transparent-panels .search-input-row {
+    background: rgb(6 16 24 / var(--panel-nav-alpha, 0.12));
+}
+
+@media (max-width: 560px) {
+    .search-panel { width: 100%; }
+    .search-input-row .search-submit-button { width: 42px; padding: 0; }
+    .search-input-row .search-submit-button span { display: none; }
+}
+
+/* 分类较多时的目录体验 */
+.nav-sidebar {
+    max-height: calc(100vh - 56px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.nav-sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.nav-sidebar-header .nav-title {
+    flex: 1;
+}
+
+.nav-close-button {
+    display: none;
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+}
+
+.nav-list {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(34, 211, 238, 0.5) transparent;
+}
+
+.nav-list::-webkit-scrollbar { width: 6px; }
+.nav-list::-webkit-scrollbar-thumb { border-radius: 99px; background: rgba(34, 211, 238, 0.5); }
+.nav-item[hidden] { display: none; }
+
+.nav-item.is-draggable {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    cursor: grab;
+    user-select: none;
+}
+
+.nav-item.is-draggable:active { cursor: grabbing; }
+
+.nav-drag-handle {
+    flex: 0 0 auto;
+    color: var(--accent);
+    opacity: 0.72;
+}
+
+#groupNav.drag-over {
+    border-radius: 10px;
+    background: rgba(34, 211, 238, 0.06);
+}
+
+#groupNav .nav-item.dragging {
+    opacity: 0.5;
+    border-color: var(--accent);
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.22), rgba(167, 139, 250, 0.18));
+    box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.14);
+}
+
+.nav-overlay,
+.floating-navigation {
+    display: none;
+}
+
+@media (max-width: 900px) {
+    .nav-sidebar {
+        position: fixed;
+        z-index: 1200;
+        top: 12px;
+        bottom: 12px;
+        left: 12px;
+        width: min(360px, calc(100vw - 24px));
+        max-height: none;
+        padding: 18px;
+        transform: translateX(calc(-100% - 24px));
+        opacity: 0;
+        visibility: hidden;
+        transition: transform 0.25s ease, opacity 0.25s ease, visibility 0.25s;
+    }
+
+    .nav-sidebar.is-open {
+        transform: translateX(0);
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .nav-close-button { display: inline-grid; place-items: center; }
+    .nav-list { display: flex; flex-direction: column; }
+
+    .nav-overlay {
+        display: block;
+        position: fixed;
+        z-index: 1190;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.58);
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.25s ease, visibility 0.25s;
+    }
+
+    .nav-overlay.is-open { opacity: 1; visibility: visible; }
+    body.nav-drawer-open { overflow: hidden; }
+
+    .floating-navigation {
+        position: fixed;
+        z-index: 1100;
+        right: 16px;
+        bottom: 18px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .floating-nav-button {
+        min-width: 48px;
+        height: 48px;
+        padding: 0 16px;
+        border: 1px solid var(--line-strong);
+        border-radius: 999px;
+        color: var(--text-main);
+        background: rgba(6, 16, 24, 0.94);
+        box-shadow: var(--shadow-lg);
+        backdrop-filter: blur(16px);
+        cursor: pointer;
+    }
+
+    .floating-nav-button span { margin-left: 7px; }
+    .back-to-top-button { display: none; padding: 0; }
+    .back-to-top-button.is-visible { display: inline-grid; place-items: center; }
 }
 
 .link-card {

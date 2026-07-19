@@ -28,10 +28,16 @@
 
 <div class="container">
     <!-- 目录导航 -->
-    <div class="nav-sidebar">
-        <div class="nav-title">目录导航</div>
+    <aside class="nav-sidebar" id="navSidebar" aria-label="分类目录">
+        <div class="nav-sidebar-header">
+            <div class="nav-title">目录导航</div>
+            <button class="nav-close-button" type="button" onclick="closeNavDrawer()" aria-label="关闭目录">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
         <div id="groupNav" class="nav-list"></div>
-    </div>
+    </aside>
+    <div id="navOverlay" class="nav-overlay" onclick="closeNavDrawer()"></div>
 
     <!-- 主要内容区 -->
     <div class="main-content">
@@ -39,16 +45,17 @@
             <!-- 搜索栏和管理员按钮 -->
             <div class="header">
                 <form class="search-form" onsubmit="handleSearch(event)">
-                    <div class="search-bar">
-                        <div class="search-icon">
-                            <i class="fas fa-search"></i>
+                    <div class="search-panel">
+                        <div class="search-input-row">
+                            <select id="searchEngine" aria-label="选择搜索引擎">
+                                <option value="baidu">百度</option>
+                                <option value="google">Google</option>
+                                <option value="bing">Bing</option>
+                            </select>
+                            <i class="fas fa-search search-leading-icon"></i>
+                            <input type="search" id="searchInput" placeholder="搜索站内导航，按回车进行网络搜索..." autocomplete="off">
+                            <button class="search-submit-button" type="submit"><i class="fas fa-arrow-right"></i><span>搜索</span></button>
                         </div>
-                        <input type="text" id="searchInput" placeholder="搜索导航或输入关键词...">
-                        <select id="searchEngine">
-                            <option value="baidu"><i class="fab fa-baidu"></i> 百度</option>
-                            <option value="google"><i class="fab fa-google"></i> Google</option>
-                            <option value="bing"><i class="fab fa-microsoft"></i> Bing</option>
-                        </select>
                     </div>
                 </form>
                 <div class="header-actions">
@@ -61,7 +68,7 @@
                     <div id="adminButton">
                         <button class="admin-button" onclick="openAdminModal()">
                             <i class="fas fa-user-lock"></i>
-                            管理员登录
+                            登录
                         </button>
                     </div>
                 </div>
@@ -113,16 +120,33 @@
 
 <!-- 管理分组模态框 -->
 <div id="groupModal" class="modal">
-    <div class="modal-content">
+    <div class="modal-content group-modal-content">
         <span class="close" onclick="closeGroupModal()"></span>
-        <h2>管理分组</h2>
+        <div class="group-modal-heading">
+            <div class="group-modal-heading-icon"><i class="fas fa-folder-plus"></i></div>
+            <div>
+                <h2 id="groupModalTitle">添加分组</h2>
+                <p id="groupModalSubtitle">创建一个新的网址分类</p>
+            </div>
+        </div>
         <form id="groupForm" onsubmit="handleGroupSubmit(event)">
-            <input type="text" id="groupName" placeholder="分组名称" required>
-            <label>
-                <input type="checkbox" id="groupPrivate">
-                私密分组
+            <label class="group-name-field">
+                <span>分组名称</span>
+                <div><i class="fas fa-folder"></i><input type="text" id="groupName" placeholder="例如：常用工具" maxlength="100" required></div>
             </label>
-            <button type="submit">保存</button>
+            <label class="group-visibility-option">
+                <input type="checkbox" id="groupPrivate">
+                <span class="group-visibility-icon"><i class="fas fa-lock"></i></span>
+                <span class="group-checkbox" aria-hidden="true"><i class="fas fa-check"></i></span>
+                <span class="group-visibility-copy">
+                    <strong>隐藏分组</strong>
+                    <small>勾选后仅管理员可见</small>
+                </span>
+            </label>
+            <div class="group-modal-actions">
+                <button class="secondary-button" type="button" onclick="closeGroupModal()">取消</button>
+                <button type="submit"><i class="fas fa-check"></i><span>保存分组</span></button>
+            </div>
         </form>
     </div>
 </div>
@@ -133,26 +157,71 @@
         <span class="close" onclick="closeBackgroundModal()"></span>
         <h2>设置背景</h2>
         <form id="backgroundForm" onsubmit="handleBackgroundSubmit(event)">
-            <input type="url" id="backgroundUrl" placeholder="背景图片地址">
-            <input type="file" id="backgroundFile" accept="image/*">
-            <select id="backgroundMode">
-                <option value="cover">铺满屏幕</option>
-                <option value="contain">完整显示</option>
-                <option value="repeat">平铺显示</option>
-            </select>
-            <div class="range-field">
-                <div class="range-header">
-                    <span>背景透明度</span>
-                    <strong id="backgroundOpacityValue">50%</strong>
+            <section class="background-setting-card">
+                <div class="background-setting-title">
+                    <i class="fas fa-image"></i>
+                    <div><strong>背景图片</strong><small>上传本地图片，或直接粘贴图片 URL</small></div>
                 </div>
-                <input type="range" id="backgroundOpacity" min="0" max="100" value="50">
-            </div>
+                <div class="background-source-row">
+                    <button class="background-upload-button" type="button" onclick="document.getElementById('backgroundFile').click()">
+                        <i class="fas fa-upload"></i><span>上传图片</span>
+                    </button>
+                    <label class="background-url-field">
+                        <i class="fas fa-link"></i>
+                        <input type="url" id="backgroundUrl" placeholder="粘贴 https://... 图片地址" autocomplete="off">
+                    </label>
+                    <input class="visually-hidden-file" type="file" id="backgroundFile" accept="image/png,image/jpeg,image/gif,image/webp">
+                </div>
+                <div id="backgroundSourceStatus" class="background-source-status">
+                    <i class="fas fa-circle-info"></i><span>当前使用已保存的背景</span>
+                </div>
+            </section>
+
+            <section class="background-setting-card">
+                <div class="background-setting-title">
+                    <i class="fas fa-sliders"></i>
+                    <div><strong>显示效果</strong><small>拖动时实时预览，点击保存后生效</small></div>
+                </div>
+                <label class="background-mode-field">
+                    <span>图片显示方式</span>
+                    <select id="backgroundMode">
+                        <option value="cover">铺满屏幕</option>
+                        <option value="contain">完整显示</option>
+                        <option value="repeat">平铺显示</option>
+                    </select>
+                </label>
+                <div class="background-range-grid">
+                    <div class="range-field">
+                        <div class="range-header">
+                            <span>背景可见程度</span>
+                            <strong id="backgroundOpacityValue">50%</strong>
+                        </div>
+                        <input type="range" id="backgroundOpacity" min="0" max="100" value="50">
+                    </div>
+                    <div class="range-field">
+                        <div class="range-header">
+                            <span>界面壁纸透出程度</span>
+                            <strong id="panelTransparencyValue">50%</strong>
+                        </div>
+                        <input type="range" id="panelTransparency" min="0" max="92" value="50">
+                    </div>
+                </div>
+            </section>
             <div class="modal-button-row">
                 <button type="button" class="secondary-button" onclick="resetBackground()">恢复默认</button>
                 <button type="submit">保存</button>
             </div>
         </form>
     </div>
+</div>
+
+<div class="floating-navigation" aria-label="快捷导航">
+    <button id="openNavButton" class="floating-nav-button directory-button" type="button" onclick="openNavDrawer()">
+        <i class="fas fa-list"></i><span>目录</span>
+    </button>
+    <button id="backToTopButton" class="floating-nav-button back-to-top-button" type="button" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" aria-label="返回顶部">
+        <i class="fas fa-arrow-up"></i>
+    </button>
 </div>
 
 <script src="api.js"></script>
